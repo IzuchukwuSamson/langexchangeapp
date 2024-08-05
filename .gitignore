@@ -1,0 +1,10 @@
+info.log
+.env
+.DS_Store
+account.db
+watcher.sh
+gin-bin
+datenest
+Makefile
+uploads
+.idea

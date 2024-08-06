@@ -1,16 +1,17 @@
 package utils
 
 import (
-	"lexibuddy/models"
 	"regexp"
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/IzuchukwuSamson/lexi/internal/app/users/models"
 )
 
 func ToUserDTO(user models.User) models.UserDTO {
 	return models.UserDTO{
-		ID:          user.ID.Hex(),
+		ID:          user.ID,
 		FirstName:   user.FirstName,
 		LastName:    user.LastName,
 		Email:       user.Email,

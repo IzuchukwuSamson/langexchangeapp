@@ -4,10 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/IzuchukwuSamson/lexi/config/db"
-	"github.com/IzuchukwuSamson/lexi/handlers/users"
-	"github.com/IzuchukwuSamson/lexi/routes"
-	"github.com/IzuchukwuSamson/lexi/services"
 	"log"
 	"net/http"
 	"os"
@@ -15,6 +11,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/IzuchukwuSamson/lexi/initializer"
+	"github.com/IzuchukwuSamson/lexi/internal/db"
+	"github.com/IzuchukwuSamson/lexi/router"
 	gHandlers "github.com/gorilla/handlers"
 	"github.com/joho/godotenv"
 )
@@ -27,24 +26,23 @@ func main() {
 	port, host := getHostAndPort()
 	logger := log.New(os.Stdout, fmt.Sprintf("%s:", os.Getenv("APP_NAME")), log.LstdFlags)
 
-	mongodb, err := db.Mongo()
+	dbsql, err := db.SQL()
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	dbConn := db.NewDB(nil, dbsql)
+	// redis := db.Redis()
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	// initialze db
-	dbConn := db.NewDB(mongodb, nil)
+	services := initializer.Services(dbConn)
+	handlers := initializer.Handlers(services, logger)
 
-	// Initialize the service
-	userService := services.NewUserService(dbConn.Mongo, logger)
+	apiRoutes := router.NewRouter(handlers)
 
-	// Initialize the handlers
-	userHandlers := users.NewUserHandlers(logger, userService)
-
-	// Initialize the router
-	// methods := []string{"POST", "GET", "PUT", "DELETE"}
-	router := routes.NewRouter(userHandlers)
-	logHandler := gHandlers.CombinedLoggingHandler(os.Stdout, router)
+	logHandler := gHandlers.CombinedLoggingHandler(os.Stdout, apiRoutes)
 
 	s := http.Server{
 		Addr:         host + ":" + port,

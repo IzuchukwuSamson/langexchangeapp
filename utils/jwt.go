@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"lexibuddy/models"
 	"time"
 
+	"github.com/IzuchukwuSamson/lexi/internal/app/users/models"
 	"github.com/golang-jwt/jwt"
 )
 
@@ -12,7 +12,7 @@ func GenerateJWT(user *models.User) (string, error) {
 
 	// Create the token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":    user.ID.Hex(),
+		"id":    user.ID,
 		"email": user.Email,
 		"exp":   time.Now().Add(time.Hour * 72).Unix(), // Token expiration time
 	})

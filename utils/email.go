@@ -86,14 +86,14 @@ func SendEmail(emailType EmailType, user User, token string) <-chan error {
 	switch emailType {
 	case ResetPassword:
 		subject = "Reset Your Password"
-		templateFile = "template/reset_password.html"
+		templateFile = "templates/reset_password.html"
 		data = EmailData{
 			Code: token,
 			Name: user.FirstName,
 		}
 	case VerifyEmail:
 		subject = "Verify Your Account"
-		templateFile = "template/verify_email.html"
+		templateFile = "templates/verify_email.html"
 		data = EmailData{
 			Code: token,
 			Name: user.FirstName,

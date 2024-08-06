@@ -1,4 +1,4 @@
-package users
+package handlers
 
 import (
 	"context"
@@ -6,23 +6,24 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"lexibuddy/models"
-	"lexibuddy/services"
-	"lexibuddy/utils"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/IzuchukwuSamson/lexi/internal/app/users/models"
+	"github.com/IzuchukwuSamson/lexi/internal/app/users/services"
+	"github.com/IzuchukwuSamson/lexi/utils"
 	"golang.org/x/oauth2"
 )
 
 type UserHandlers struct {
 	log      *log.Logger
-	services services.UserInterface
+	services services.UserServiceInterface
 }
 
-func NewUserHandlers(l *log.Logger, s services.UserInterface) *UserHandlers {
+func NewUserHandlers(l *log.Logger, s services.UserServiceInterface) *UserHandlers {
 	return &UserHandlers{
 		log:      l,
 		services: s,
@@ -98,7 +99,7 @@ func (u UserHandlers) Signup(rw http.ResponseWriter, r *http.Request) {
 		utils.ResponseMsg{
 			Message: "Account created successfully. Please check your email for the verification PIN.",
 			Data: map[string]string{
-				"id": createdUser.ID.Hex(),
+				"id": createdUser.ID,
 			},
 		},
 		http.StatusOK,
@@ -158,12 +159,12 @@ func (u UserHandlers) PasswordLogin(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if userDb.ID.Hex() == "" {
-		utils.ReturnJSON(rw, utils.ErrMessage{Error: "details not found"}, http.StatusUnauthorized)
+	if userDb.ID == "" {
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "details not found 2"}, http.StatusUnauthorized)
 		return
 	}
 
-	if userDb.IsActive != 1 {
+	if userDb.IsActive == 0 { // Assuming 0 means inactive
 		utils.ReturnJSON(rw, utils.ErrMessage{Error: "verify your account before logging in"}, http.StatusUnauthorized)
 		return
 	}
@@ -176,7 +177,7 @@ func (u UserHandlers) PasswordLogin(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate JWT token
-	tokenString, err := utils.GenerateToken(fmt.Sprint(user.ID))
+	tokenString, err := utils.GenerateToken(fmt.Sprint(userDb.ID))
 	if err != nil {
 		u.log.Printf("error generating token: %v\n", err)
 		utils.ReturnJSON(rw, utils.ErrMessage{Error: "could not generate token"}, http.StatusInternalServerError)
@@ -270,8 +271,15 @@ func (u UserHandlers) ResetPassword(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userIDInt, err := strconv.ParseInt(user.ID, 10, 64)
+	if err != nil {
+		u.log.Printf("error parsing user ID: %v\n", err)
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "invalid user ID"}, http.StatusInternalServerError)
+		return
+	}
+
 	passwordReset, err := u.services.GetPasswordResetByCode(request.ResetCode)
-	if err != nil || passwordReset == nil || passwordReset.ExpiresAt.Before(time.Now()) || passwordReset.UserID != user.ID {
+	if err != nil || passwordReset == nil || passwordReset.ExpiresAt.Before(time.Now()) || passwordReset.UserID != userIDInt {
 		u.log.Printf("invalid or expired reset code: %v\n", err)
 		utils.ReturnJSON(rw, utils.ErrMessage{Error: "invalid or expired reset code"}, http.StatusUnauthorized)
 		return

@@ -5,18 +5,41 @@ import (
 )
 
 type User struct {
-	ID          string    `json:"id"`
-	FirstName   string    `json:"firstname"`
-	LastName    string    `json:"lastname"`
-	Username    string    `json:"username"`
-	Email       string    `json:"email"`
-	Password    string    `json:"password"`
-	PhoneNumber string    `json:"phonenumber"`
-	Role        string    `json:"role"`
-	IsActive    int64     `json:"is_active"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
-	DeletedAt   time.Time `json:"deletedAt"`
+	ID          string `json:"id"`
+	FirstName   string `json:"firstname"`
+	LastName    string `json:"lastname"`
+	Username    string `json:"username"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	PhoneNumber string `json:"phonenumber"`
+	Role        string `json:"role"`
+	IsActive    int64  `json:"is_active"`
+	// EmailVerified           bool                   `json:"email_verified"`
+	CreatedAt               time.Time              `json:"createdAt"`
+	UpdatedAt               time.Time              `json:"updatedAt"`
+	DeletedAt               time.Time              `json:"deletedAt"`
+	LanguagesSpoken         []string               `json:"languages_spoken"`
+	LanguagesLearning       []string               `json:"languages_learning"`
+	Bio                     string                 `json:"bio"`
+	ProfilePicture          string                 `json:"profile_picture"`
+	Location                string                 `json:"location"`
+	LearningGoals           []string               `json:"learning_goals"`
+	PreferredLanguage       string                 `json:"preferred_language"`
+	TimeZone                string                 `json:"time_zone"`
+	AccountType             string                 `json:"account_type"`
+	SocialLinks             map[string]string      `json:"social_links"`
+	Connections             []string               `json:"connections"`
+	PreferredLearningStyle  string                 `json:"preferred_learning_style"`
+	Availability            string                 `json:"availability"`
+	Achievements            []string               `json:"achievements"`
+	Progress                map[string]interface{} `json:"progress"`
+	Ratings                 map[string]float64     `json:"ratings"`
+	Feedback                []string               `json:"feedback"`
+	SubscriptionStatus      string                 `json:"subscription_status"`
+	PaymentMethod           string                 `json:"payment_method"`
+	NotificationPreferences map[string]bool        `json:"notification_preferences"`
+	TwoFactorEnabled        bool                   `json:"two_factor_enabled"`
+	PrivacySettings         map[string]bool        `json:"privacy_settings"`
 }
 
 type UserDTO struct {

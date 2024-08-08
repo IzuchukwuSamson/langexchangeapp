@@ -47,8 +47,8 @@ func main() {
 	s := http.Server{
 		Addr:         host + ":" + port,
 		Handler:      logHandler,
-		WriteTimeout: 5 * time.Second,
-		ReadTimeout:  2 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		ReadTimeout:  30 * time.Second,
 	}
 	go func() {
 		if err := s.ListenAndServe(); errors.Is(err, http.ErrServerClosed) {

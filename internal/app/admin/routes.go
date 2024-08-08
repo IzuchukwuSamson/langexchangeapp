@@ -8,7 +8,7 @@ import (
 func RegisterAdminRoutes(base *mux.Router, handlers *initializer.Handler) {
 	userRoutes := base.PathPrefix("/admin").Subrouter()
 
-	userRoutes.HandleFunc("/register", handlers.Admin.RegisterAdminEmail)
+	userRoutes.HandleFunc("/register", handlers.Admin.RegisterAdminEmail).Methods("POST")
 
 	// auth protected routes
 	userAuthRoutes := userRoutes.NewRoute().Subrouter()

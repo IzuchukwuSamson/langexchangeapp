@@ -25,8 +25,11 @@ const (
 	PasswordReset          = "password_reset"
 )
 
+// roles
 const (
-	UserRole = "user"
+	SuperAdminRole = "superadmin"
+	AdminRole      = "admin"
+	UserRole       = "user"
 )
 
 const (

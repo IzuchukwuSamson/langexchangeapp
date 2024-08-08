@@ -1,0 +1,59 @@
+Proven experience as a Go developer, preferably in a blockchain-related project.
+Experience with GitHub and issue tracking.
+Familiarity with the Erigon blockchain node is a plus
+
+Infrastructure and Cloud Computing skills
+Experience with Linux and Databases
+Cloud certification (e.g., AWS, Microsoft, or Google Cloud)
+Experience with DevOps tools and processes is a plus
+
+Key Responsibilities:
+
+1. Backend Development:
+
+- Design, develop, and maintain backend services and systems using Go
+- Implement and manage APIs (REST and gRPC) to facilitate communication between services.
+- Ensure the scalability and performance of backend services.
+- Implement caching with Redis and document storage with MongoDB.
+
+2. Microservices Architecture:
+
+- Develop and maintain applications using microservices architecture.
+- Understand and implement best practices for designing and managing microservices.
+- Ensure high availability, scalability, and resilience of microservices.
+
+3. Systems Development:
+
+- Contribute to the development and maintenance of the underlying systems infrastructure.
+- Develop tools and scripts to automate system tasks and improve efficiency.
+
+4. Containerization and Deployment:
+
+- Utilize containerization technologies (e.g., Docker, Kubernetes) for deployment and management of applications.
+- Implement best practices for container orchestration and scaling.
+
+5. Database Management:
+
+- Design, implement, and manage databases (SQL and NoSQL) to support backend services.
+- Optimize database performance and ensure data integrity.
+
+6. Version Control and Collaboration:
+
+- Use version control systems (e.g., Git) for code management and collaboration.
+- Participate in code reviews and contribute to the continuous improvement of development processes.
+
+7. Systems Experience:
+
+- Leverage systems experience to enhance the stability, security, and performance of our solutions.
+- Collaborate with the infrastructure team to ensure seamless integration of backend services with the overall platform.
+
+8. Other Responsibilities:
+
+- Troubleshoot and resolve issues related to backend services and systems.
+- Stay updated with emerging technologies and industry trends to continuously improve our offerings.
+
+others
+
+- Design and implement a custom API Gateway using Golang for routing and rate limiting, and manage APIs with Kong.
+- Manage relational data storage using PostgreSQL, including the TimescaleDB extension for time-series data.
+- Use Elasticsearch for full-text search and analytics.

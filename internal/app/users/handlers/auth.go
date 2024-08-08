@@ -82,7 +82,7 @@ func (u UserHandlers) Signup(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utilsUser := utils.User{
+	utilsUser := utils.EmailInfo{
 		FirstName: createdUser.FirstName,
 		Email:     createdUser.Email,
 	}
@@ -247,7 +247,7 @@ func (u UserHandlers) ForgotPassword(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utilsUser := utils.User{
+	utilsUser := utils.EmailInfo{
 		FirstName: user.FirstName,
 		Email:     user.Email,
 	}

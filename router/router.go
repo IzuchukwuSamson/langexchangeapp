@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/IzuchukwuSamson/lexi/initializer"
+	"github.com/IzuchukwuSamson/lexi/internal/app/admin"
 	"github.com/IzuchukwuSamson/lexi/internal/app/users"
 	"github.com/gorilla/mux"
 )
@@ -18,6 +19,7 @@ func NewRouter(handlers *initializer.Handler) *mux.Router {
 
 	// register individual routes
 	users.RegisterUserRoutes(api, handlers)
+	admin.RegisterAdminRoutes(api, handlers)
 
 	return router
 }

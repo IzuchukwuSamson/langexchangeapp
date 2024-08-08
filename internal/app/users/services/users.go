@@ -39,7 +39,7 @@ func (u *UserService) FetchUserById(id string) (*models.User, error) {
 // GetAllUsers implements UserInterface.
 func (u *UserService) FetchAllUsers() ([]models.User, error) {
 	query := `
-        SELECT id, firstname, lastname, username, email, password, phonenumber, role, is_active, created_at, updated_at 
+        SELECT id, firstname, lastname, username, email, email_verified, password, phonenumber, role, last_active, created_at, updated_at 
         FROM users
     `
 	// Execute the query
@@ -62,10 +62,11 @@ func (u *UserService) FetchAllUsers() ([]models.User, error) {
 			&user.LastName,
 			&user.Username,
 			&user.Email,
+			&user.EmailVerified,
 			&user.Password,
 			&user.PhoneNumber,
 			&user.Role,
-			&user.IsActive,
+			&user.LastActive,
 			&user.CreatedAt,
 			&user.UpdatedAt,
 		)
@@ -84,36 +85,54 @@ func (u *UserService) FetchAllUsers() ([]models.User, error) {
 }
 
 func (u *UserService) CreateUser(user models.User) (*models.User, string, error) {
-	query := `
-        INSERT INTO users (firstname, lastname, username, email, password, phonenumber, role, is_active, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `
-	result, err := u.DB.Exec(query, user.FirstName, user.LastName, user.Username, user.Email, user.Password, user.PhoneNumber, user.Role, user.IsActive, time.Now(), time.Now())
+	// Transaction Begin: Start a new transaction with tx, err := u.DB.Begin().
+	tx, err := u.DB.Begin()
 	if err != nil {
+		return nil, "", fmt.Errorf("failed to begin transaction: %v", err)
+	}
+
+	// Insert User: Insert the user data using tx.Exec() within the transaction context.
+	query := `
+        INSERT INTO users (firstname, lastname, username, email, email_verified, password, phonenumber, role, last_active, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `
+	result, err := tx.Exec(query, user.FirstName, user.LastName, user.Username, user.Email, user.EmailVerified, user.Password, user.PhoneNumber, user.Role, time.Now(), time.Now(), time.Now())
+	if err != nil {
+		// Transaction Rollback: Rollback the transaction with tx.Rollback() if any operation fails.
+		tx.Rollback()
 		return nil, "", fmt.Errorf("failed to insert user: %v", err)
 	}
 
+	// Retrieve User ID: Retrieve the last inserted user ID with result.LastInsertId().
 	userID, err := result.LastInsertId()
 	if err != nil {
+		// Transaction Rollback: Rollback the transaction with tx.Rollback() if any operation fails.
+		tx.Rollback()
 		return nil, "", fmt.Errorf("failed to retrieve inserted user ID: %v", err)
 	}
 
 	user.ID = strconv.FormatInt(userID, 10)
-	// user.ID = userID
 
+	// Generate a verification code
 	verificationCode := utils.GeneratePIN()
 
+	// Insert Email Verification: Insert the email verification record within the same transaction.
 	verificationQuery := `
         INSERT INTO email_verifications (user_id, email, code) 
         VALUES (?, ?, ?)
     `
-	_, err = u.DB.Exec(verificationQuery, user.ID, user.Email, strconv.Itoa(verificationCode))
+	_, err = tx.Exec(verificationQuery, user.ID, user.Email, strconv.Itoa(verificationCode))
 	if err != nil {
-		_, rollbackErr := u.DB.Exec("DELETE FROM users WHERE id = ?", user.ID)
-		if rollbackErr != nil {
-			u.log.Printf("Error rolling back user creation: %v", rollbackErr)
-		}
+		// Transaction Rollback: Rollback the transaction with tx.Rollback() if any operation fails.
+		tx.Rollback()
 		return nil, "", fmt.Errorf("failed to insert email verification: %v", err)
+	}
+
+	// Transaction Commit: Commit the transaction with tx.Commit() if all operations succeed.
+	if err := tx.Commit(); err != nil {
+		// Transaction Rollback: Rollback the transaction with tx.Rollback() if any operation fails.
+		tx.Rollback()
+		return nil, "", fmt.Errorf("failed to commit transaction: %v", err)
 	}
 
 	return &user, strconv.Itoa(verificationCode), nil
@@ -134,7 +153,7 @@ func (u *UserService) VerifyEmail(verificationCode string) error {
 	}
 
 	// Update the user's IsActive status
-	updateQuery := "UPDATE users SET is_active = 1 WHERE id = ?"
+	updateQuery := "UPDATE users SET email_verified = 1 WHERE id = ?"
 	_, err = u.DB.Exec(updateQuery, userID)
 	if err != nil {
 		u.log.Printf("error updating user: %v\n", err)
@@ -156,17 +175,18 @@ func (u *UserService) FindOrCreateUser(userInfo map[string]interface{}) (*models
 	var user models.User
 
 	// Check if the user already exists
-	query := "SELECT id, firstname, lastname, username, email, password, phonenumber, role, is_active, created_at, updated_at FROM users WHERE email = ?"
+	query := "SELECT id, firstname, lastname, username, email, email_verified, password, phonenumber, role, last_active, created_at, updated_at FROM users WHERE email = ?"
 	err := u.DB.QueryRow(query, userInfo["email"]).Scan(
 		&user.ID,
 		&user.FirstName,
 		&user.LastName,
 		&user.Username,
 		&user.Email,
+		&user.EmailVerified,
 		&user.Password,
 		&user.PhoneNumber,
 		&user.Role,
-		&user.IsActive,
+		&user.LastActive,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -181,7 +201,7 @@ func (u *UserService) FindOrCreateUser(userInfo map[string]interface{}) (*models
 
 	// User does not exist, create a new one
 	query = `
-        INSERT INTO users (firstname, lastname, username, email, password, phonenumber, role, is_active, created_at, updated_at) 
+        INSERT INTO users (firstname, lastname, username, email, email_verified, password, phonenumber, role, last_active, created_at, updated_at) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 	result, err := u.DB.Exec(query,
@@ -189,10 +209,11 @@ func (u *UserService) FindOrCreateUser(userInfo map[string]interface{}) (*models
 		userInfo["lastname"],
 		userInfo["username"],
 		userInfo["email"],
+		userInfo["email_verified"],
 		userInfo["password"],
 		userInfo["phonenumber"],
 		userInfo["role"],
-		userInfo["is_active"],
+		time.Now(),
 		time.Now(),
 		time.Now(),
 	)
@@ -212,10 +233,11 @@ func (u *UserService) FindOrCreateUser(userInfo map[string]interface{}) (*models
 	user.LastName = userInfo["lastname"].(string)
 	user.Username = userInfo["username"].(string)
 	user.Email = userInfo["email"].(string)
+	user.EmailVerified = userInfo["email_verified"].(int)
 	user.Password = userInfo["password"].(string)
 	user.PhoneNumber = userInfo["phonenumber"].(string)
 	user.Role = userInfo["role"].(string)
-	user.IsActive = userInfo["is_active"].(int64)
+	user.LastActive = time.Now()
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 
@@ -225,7 +247,7 @@ func (u *UserService) FindOrCreateUser(userInfo map[string]interface{}) (*models
 func (u *UserService) UpdateUser(updatedUser *models.User) (*models.User, error) {
 	query := `
         UPDATE users 
-        SET firstname = ?, lastname = ?, username = ?, email = ?, password = ?, phonenumber = ?, role = ?, is_active = ?, updated_at = ?
+        SET firstname = ?, lastname = ?, username = ?, email = ?, password = ?, phonenumber = ?, role = ?, last_active = ?, updated_at = ?
         WHERE id = ?
     `
 	_, err := u.DB.Exec(query,
@@ -236,7 +258,7 @@ func (u *UserService) UpdateUser(updatedUser *models.User) (*models.User, error)
 		updatedUser.Password,
 		updatedUser.PhoneNumber,
 		updatedUser.Role,
-		updatedUser.IsActive,
+		time.Now(),
 		time.Now(),
 		updatedUser.ID,
 	)
@@ -247,7 +269,7 @@ func (u *UserService) UpdateUser(updatedUser *models.User) (*models.User, error)
 	// Fetch the updated user from the database to return
 	var user models.User
 	selectQuery := `
-        SELECT id, firstname, lastname, username, email, password, phonenumber, role, is_active, created_at, updated_at 
+        SELECT id, firstname, lastname, username, email, email_verified, password, phonenumber, role, last_active, created_at, updated_at 
         FROM users 
         WHERE id = ?
     `
@@ -257,10 +279,11 @@ func (u *UserService) UpdateUser(updatedUser *models.User) (*models.User, error)
 		&user.LastName,
 		&user.Username,
 		&user.Email,
+		&user.EmailVerified,
 		&user.Password,
 		&user.PhoneNumber,
 		&user.Role,
-		&user.IsActive,
+		&user.LastActive,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
@@ -274,7 +297,7 @@ func (u *UserService) UpdateUser(updatedUser *models.User) (*models.User, error)
 func (u *UserService) Update(user *models.User) error {
 	query := `
         UPDATE users 
-        SET email = ?, firstname = ?, lastname = ?, username = ?, phonenumber = ?, role = ?, is_active = ?, updated_at = ?
+        SET email = ?, firstname = ?, lastname = ?, username = ?, phonenumber = ?, role = ?, last_active = ?, updated_at = ?
         WHERE id = ?
     `
 	_, err := u.DB.Exec(query,
@@ -284,7 +307,7 @@ func (u *UserService) Update(user *models.User) error {
 		user.Username,
 		user.PhoneNumber,
 		user.Role,
-		user.IsActive,
+		time.Now(),
 		time.Now(),
 		user.ID,
 	)
@@ -295,7 +318,7 @@ func (u *UserService) GetUserByEmail(email string) (*models.User, error) {
 	var user models.User
 	var deletedAt sql.NullTime // Use sql.NullTime to handle possible NULL values
 
-	query := `SELECT id, firstname, lastname, email, password, username, phonenumber, is_active, created_at, updated_at, deleted_at FROM users WHERE email = ?`
+	query := `SELECT id, firstname, lastname, email, email_verified, password, username, phonenumber, last_active, created_at, updated_at, deleted_at FROM users WHERE email = ?`
 
 	// Execute the query
 	row := u.DB.QueryRow(query, email)
@@ -306,10 +329,11 @@ func (u *UserService) GetUserByEmail(email string) (*models.User, error) {
 		&user.FirstName,
 		&user.LastName,
 		&user.Email,
+		&user.EmailVerified,
 		&user.Password,
 		&user.Username,
 		&user.PhoneNumber,
-		&user.IsActive,
+		&user.LastActive,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 		&deletedAt,
@@ -364,16 +388,17 @@ func (u *UserService) RemoveUser(id string) (*models.User, error) {
 
 	// Find the user to be removed
 	var deletedUser models.User
-	query := "SELECT id, firstname, lastname, email, password, phonenumber, role, is_active, created_at, updated_at FROM users WHERE id = ?"
+	query := "SELECT id, firstname, lastname, email, email_verified, password, phonenumber, role, last_active, created_at, updated_at FROM users WHERE id = ?"
 	err = u.DB.QueryRow(query, userID).Scan(
 		&deletedUser.ID,
 		&deletedUser.FirstName,
 		&deletedUser.LastName,
 		&deletedUser.Email,
+		&deletedUser.EmailVerified,
 		&deletedUser.Password,
 		&deletedUser.PhoneNumber,
 		&deletedUser.Role,
-		&deletedUser.IsActive,
+		&deletedUser.LastActive,
 		&deletedUser.CreatedAt,
 		&deletedUser.UpdatedAt,
 	)

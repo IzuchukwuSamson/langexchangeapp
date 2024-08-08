@@ -5,19 +5,19 @@ import (
 )
 
 type User struct {
-	ID          string `json:"id"`
-	FirstName   string `json:"firstname"`
-	LastName    string `json:"lastname"`
-	Username    string `json:"username"`
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	PhoneNumber string `json:"phonenumber"`
-	Role        string `json:"role"`
-	IsActive    int64  `json:"is_active"`
-	// EmailVerified           bool                   `json:"email_verified"`
-	CreatedAt               time.Time              `json:"createdAt"`
-	UpdatedAt               time.Time              `json:"updatedAt"`
-	DeletedAt               time.Time              `json:"deletedAt"`
+	ID                      string                 `json:"id"`
+	FirstName               string                 `json:"firstname"`
+	LastName                string                 `json:"lastname"`
+	Username                string                 `json:"username"`
+	Email                   string                 `json:"email"`
+	EmailVerified           int                    `json:"email_verified"`
+	Password                string                 `json:"password"`
+	PhoneNumber             string                 `json:"phonenumber"`
+	Role                    string                 `json:"role"`
+	LastActive              time.Time              `json:"last_active"`
+	CreatedAt               time.Time              `json:"created_at"`
+	UpdatedAt               time.Time              `json:"updated_at"`
+	DeletedAt               time.Time              `json:"deleted_at"`
 	LanguagesSpoken         []string               `json:"languages_spoken"`
 	LanguagesLearning       []string               `json:"languages_learning"`
 	Bio                     string                 `json:"bio"`

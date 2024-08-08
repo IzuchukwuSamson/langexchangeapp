@@ -28,17 +28,70 @@ func VerifyToken(t string) (jwt.MapClaims, error) {
 GenerateToken generates a token from an input string
 using the secret key and the HS256 signing method
 */
-func GenerateToken(text string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+// func GenerateToken(text string) (string, error) {
+// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+// 		"iat": time.Now().Unix(),
+// 		"exp": time.Now().Add(500 * time.Hour).Unix(),
+// 		"sub": text,
+// 	})
+// 	tokStr, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	return tokStr, nil
+// }
+
+func GenerateToken(text string) (string, string, error) {
+	// Generate Access Token
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"iat": time.Now().Unix(),
-		"exp": time.Now().Add(500 * time.Hour).Unix(),
+		"exp": time.Now().Add(1 * time.Hour).Unix(), // 1 hour expiration
 		"sub": text,
 	})
-	tokStr, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	accessTokStr, err := accessToken.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	if err != nil {
+		return "", "", err
+	}
+
+	// Generate Refresh Token
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Add(30 * 24 * time.Hour).Unix(), // 30 days expiration
+		"sub": text,
+	})
+	refreshTokStr, err := refreshToken.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessTokStr, refreshTokStr, nil
+}
+
+func RefreshAccessToken(refreshTokenStr string) (string, error) {
+	// Parse the refresh token
+	token, err := jwt.Parse(refreshTokenStr, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
 	if err != nil {
 		return "", err
 	}
-	return tokStr, nil
+
+	// Validate the token and extract the claims
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		// Generate new access token
+		newAccessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"iat": time.Now().Unix(),
+			"exp": time.Now().Add(1 * time.Hour).Unix(), // 1 hour expiration
+			"sub": claims["sub"],
+		})
+		newAccessTokStr, err := newAccessToken.SignedString([]byte(os.Getenv("JWT_SECRET")))
+		if err != nil {
+			return "", err
+		}
+		return newAccessTokStr, nil
+	} else {
+		return "", err
+	}
 }
 
 /*

@@ -3,19 +3,22 @@ package initializer
 import (
 	"database/sql"
 
-	"github.com/IzuchukwuSamson/lexi/internal/app/users/services"
+	adminServices "github.com/IzuchukwuSamson/lexi/internal/app/admin/services"
+	userServices "github.com/IzuchukwuSamson/lexi/internal/app/users/services"
 	"github.com/IzuchukwuSamson/lexi/internal/db"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Store struct {
-	User services.UserServiceInterface
+	User  userServices.UserServiceInterface
+	Admin adminServices.AdminServiceInterface
 	// Redis *redis.Client
 }
 
 func newStoreDB(sqldb *sql.DB, mongodb *mongo.Database) *Store {
 	store := Store{
-		User: services.NewUserService(sqldb),
+		User:  userServices.NewUserService(sqldb),
+		Admin: adminServices.NewAdminService(sqldb),
 	}
 	return &store
 }

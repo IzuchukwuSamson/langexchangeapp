@@ -70,7 +70,7 @@ func (u UserHandlers) Signup(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user.Role = utils.UserRole
-	user.IsActive = 0
+	user.LastActive = time.Now()
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 
@@ -160,11 +160,11 @@ func (u UserHandlers) PasswordLogin(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	if userDb.ID == "" {
-		utils.ReturnJSON(rw, utils.ErrMessage{Error: "details not found 2"}, http.StatusUnauthorized)
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "details not found"}, http.StatusUnauthorized)
 		return
 	}
 
-	if userDb.IsActive == 0 { // Assuming 0 means inactive
+	if userDb.EmailVerified == 0 { // 0 means inactive
 		utils.ReturnJSON(rw, utils.ErrMessage{Error: "verify your account before logging in"}, http.StatusUnauthorized)
 		return
 	}
@@ -176,18 +176,43 @@ func (u UserHandlers) PasswordLogin(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate JWT token
-	tokenString, err := utils.GenerateToken(fmt.Sprint(userDb.ID))
+	// Generate JWT tokens
+	accessToken, refreshToken, err := utils.GenerateToken(fmt.Sprint(userDb.ID))
 	if err != nil {
-		u.log.Printf("error generating token: %v\n", err)
-		utils.ReturnJSON(rw, utils.ErrMessage{Error: "could not generate token"}, http.StatusInternalServerError)
+		u.log.Printf("error generating tokens: %v\n", err)
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "could not generate tokens"}, http.StatusInternalServerError)
 		return
 	}
 
 	utils.ReturnJSON(rw, utils.ResponseMsg{
 		Message: "Logged in successfully",
 		Data: map[string]string{
-			"token": tokenString,
+			"access_token":  accessToken,
+			"refresh_token": refreshToken,
+		}},
+		http.StatusOK,
+	)
+}
+
+func (u UserHandlers) RefreshToken(rw http.ResponseWriter, r *http.Request) {
+	var request struct {
+		RefreshToken string `json:"refresh_token" binding:"required"`
+	}
+	if err := utils.FromJSON(r.Body, &request); err != nil {
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "invalid request"}, http.StatusUnprocessableEntity)
+		return
+	}
+
+	newAccessToken, err := utils.RefreshAccessToken(request.RefreshToken)
+	if err != nil {
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "invalid refresh token"}, http.StatusUnauthorized)
+		return
+	}
+
+	utils.ReturnJSON(rw, utils.ResponseMsg{
+		Message: "Token refreshed successfully",
+		Data: map[string]string{
+			"access_token": newAccessToken,
 		}},
 		http.StatusOK,
 	)

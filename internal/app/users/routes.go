@@ -9,7 +9,7 @@ import (
 func RegisterUserRoutes(base *mux.Router, userHandlers *initializer.Handler) {
 	userRoutes := base.PathPrefix("/users").Subrouter()
 
-	userRoutes.HandleFunc("/signup", userHandlers.User.Signup)
+	userRoutes.HandleFunc("/signup", userHandlers.User.Signup).Methods("POST")
 	userRoutes.HandleFunc("/login", userHandlers.User.PasswordLogin).Methods("POST")
 	userRoutes.HandleFunc("/oauth", userHandlers.User.SocialLogin).Methods("POST")
 	userRoutes.HandleFunc("/verify-email", userHandlers.User.VerifyEmail).Methods("POST")

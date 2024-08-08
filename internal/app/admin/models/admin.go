@@ -3,8 +3,9 @@ package models
 import "time"
 
 type Admin struct {
-	ID           string    `json:"id"`
-	Email        string    `json:"email"`
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	// EmailVerified int       `json:"email_verified"`
 	Password     string    `json:"password"`
 	Name         string    `json:"name"`
 	Role         string    `json:"role"`

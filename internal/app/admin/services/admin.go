@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -92,6 +93,52 @@ func (a *AdminService) NewAdminEmail(ad adminModel.Admin) (*adminModel.Admin, er
 
 	return &ad, nil
 }
+
+func (a *AdminService) GetAdminByEmail(ad string) (*adminModel.Admin, error) {
+	var admin adminModel.Admin
+
+	// Prepare the query to select the admin by email
+	query := "SELECT id, name, email, password FROM admins WHERE email = ?"
+
+	// Execute the query
+	err := a.DB.QueryRow(query, admin.Email).Scan(&admin.ID, &admin.Name, &admin.Email, &admin.Password)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("admin not found")
+		}
+		return nil, err
+	}
+
+	return &admin, nil
+
+}
+
+// UpdateAdminPassword updates the password of an existing admin in the database.
+func (s *AdminService) UpdateAdminPassword(admin *adminModel.Admin) error {
+	// Construct the SQL query for updating the password
+	query := `UPDATE admins SET password = ? WHERE email = ?`
+
+	// Execute the query with the hashed password and the admin's email
+	_, err := s.DB.Exec(query, admin.Password, admin.Email)
+	if err != nil {
+		return fmt.Errorf("error updating admin password: %w", err)
+	}
+
+	return nil
+}
+
+// func (a *AdminService) CreateAdmin(admin *adminModel.Admin) error {
+// 	// Prepare the SQL statement for inserting a new admin
+// 	query := "INSERT INTO admins (id, name, email, password) VALUES (?, ?, ?, ?)"
+
+// 	// Execute the insertion
+// 	_, err := a.DB.Exec(query, admin.ID, admin.Name, admin.Email, admin.Password)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
 
 // FetchAllUsers implements AdminServiceInterface.
 func (u *AdminService) FetchAllUsers() ([]userModel.User, error) {

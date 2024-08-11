@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"database/sql"
+	"errors"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/IzuchukwuSamson/lexi/internal/app/admin/models"
 	"github.com/IzuchukwuSamson/lexi/internal/app/admin/services"
@@ -76,6 +79,71 @@ func (ah *AdminHandlers) RegisterAdminEmail(rw http.ResponseWriter, r *http.Requ
 			},
 		},
 		http.StatusCreated,
+	)
+}
+
+func (ah *AdminHandlers) UpdateAdmin(rw http.ResponseWriter, r *http.Request) {
+	var admin models.Admin
+
+	// Parse the request body into the admin struct
+	if err := utils.FromJSON(r.Body, &admin); err != nil {
+		log.Printf("error reading body: %v", err)
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "error in request body"}, http.StatusBadRequest)
+		return
+	}
+
+	// Trim and validate the email and password
+	admin.Email = strings.TrimSpace(admin.Email)
+
+	if admin.Email == "" || admin.Password == "" {
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "email or password is missing"}, http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsValidEmail(admin.Email) {
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "invalid email format"}, http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsValidPassword(admin.Password) {
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "password must contain uppercase, lowercase, and numbers"}, http.StatusBadRequest)
+		return
+	}
+
+	// Check if the admin already exists
+	retrieved, err := ah.services.GetAdminByEmail(admin.Email)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		// If there's an error that's not "no rows found", return an internal server error
+		log.Printf("error retrieving admin by email: %v", err)
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "error retrieving admin"}, http.StatusInternalServerError)
+		return
+	}
+
+	// Hash the password
+	hashed, err := utils.HashPassword(admin.Password)
+	if err != nil {
+		errMsg := "error hashing password"
+		log.Printf("%v: %v", errMsg, err)
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: errMsg}, http.StatusInternalServerError)
+		return
+	}
+
+	// If the admin exists, update the password
+	retrieved.Password = hashed
+	if err := ah.services.UpdateAdminPassword(retrieved); err != nil {
+		log.Printf("error updating admin password: %v", err)
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "error updating admin password"}, http.StatusInternalServerError)
+		return
+	}
+
+	utils.ReturnJSON(rw,
+		utils.ResponseMsg{
+			Message: "Admin password updated successfully",
+			Data: map[string]interface{}{
+				"Admin": retrieved,
+			},
+		},
+		http.StatusOK,
 	)
 }
 

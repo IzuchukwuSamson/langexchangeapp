@@ -10,4 +10,7 @@ type AdminServiceInterface interface {
 	AdminEmailExists(email string) (bool, error)
 	GetUserRoleByID(adminID int) (string, error)
 	NewAdminEmail(ad adminModel.Admin) (*adminModel.Admin, error)
+	GetAdminByEmail(a string) (*adminModel.Admin, error)
+	UpdateAdminPassword(admin *adminModel.Admin) error
+	// CreateAdmin(admin *adminModel.Admin) error
 }

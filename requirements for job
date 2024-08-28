@@ -57,3 +57,23 @@ others
 - Design and implement a custom API Gateway using Golang for routing and rate limiting, and manage APIs with Kong.
 - Manage relational data storage using PostgreSQL, including the TimescaleDB extension for time-series data.
 - Use Elasticsearch for full-text search and analytics.
+
+### GOLANG DEVELOPER REQUIREMENTS
+
+- Proven experience as a Senior Backend Developer with a focus on Golang.
+- Strong knowledge of Golang, including its paradigms, constructs, and idioms.
+- Experience with RESTful APIs, microservices architecture, and distributed systems.
+- Familiarity with database technologies such as PostgreSQL, MySQL, MongoDB, or similar.
+- Experience with cloud platforms like AWS, GCP, or Azure.
+- Knowledge of containerization tools such as Docker and orchestration tools like Kubernetes.
+- Strong problem-solving skills and the ability to work independently.
+- Excellent communication skills and the ability to collaborate effectively with remote teams.
+- Familiarity with version control systems like Git.
+- Understanding of Agile methodologies and DevOps practices is a plus.
+
+Preferred Qualifications:
+
+- Experience with other backend languages such as Python, Java, or Node.js.
+- Familiarity with CI/CD pipelines and tools like Jenkins, GitLab CI, or CircleCI.
+- Knowledge of monitoring tools such as Prometheus, Grafana, or ELK Stack.
+- Experience with GraphQL or gRPC is a plus

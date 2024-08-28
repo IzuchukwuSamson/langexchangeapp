@@ -42,7 +42,14 @@ func main() {
 
 	apiRoutes := router.NewRouter(handlers)
 
-	logHandler := gHandlers.CombinedLoggingHandler(os.Stdout, apiRoutes)
+	// CORS middleware
+	corsHandler := gHandlers.CORS(
+		gHandlers.AllowedOrigins([]string{"*"}),                             // Allow all origins
+		gHandlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE"}),  // Allow specific methods
+		gHandlers.AllowedHeaders([]string{"Content-Type", "Authorization"}), // Allow specific headers
+	)(apiRoutes)
+
+	logHandler := gHandlers.CombinedLoggingHandler(os.Stdout, corsHandler)
 
 	s := http.Server{
 		Addr:         host + ":" + port,

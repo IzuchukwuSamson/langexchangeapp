@@ -1,4 +1,4 @@
-1. test the handlers
+<!-- 1. test the handlers
 2. capitialize the first letters of the names submitted during signup
 3. if the user was created and an error ocuured along the way, stop the process and delete the user
    from the database
@@ -8,4 +8,6 @@
    different go functions
 6. Write function to check for active users(those who logged in within the last 7 days)
 
-7. write the code for resending the verification pin
+7. write the code for resending the verification pin -->
+
+1. confirm password

@@ -15,9 +15,10 @@ func RegisterUserRoutes(base *mux.Router, userHandlers *initializer.Handler) {
 	userRoutes.HandleFunc("/verify-email", userHandlers.User.VerifyEmail).Methods("POST")
 	userRoutes.HandleFunc("/forgot-password", userHandlers.User.ForgotPassword).Methods("POST")
 	userRoutes.HandleFunc("/reset-password", userHandlers.User.ResetPassword).Methods("POST")
+	userRoutes.HandleFunc("/getallusers", userHandlers.User.GetAllUsers).Methods("GET")
 
 	// auth protected routes
 	userAuthRoutes := userRoutes.NewRoute().Subrouter()
 	userAuthRoutes.Use(mux.MiddlewareFunc(userHandlers.Middleware.AuthCheck))
-	userAuthRoutes.HandleFunc("/getallusers", userHandlers.User.GetAllUsers).Methods("GET")
+	// userAuthRoutes.HandleFunc("/getallusers", userHandlers.User.GetAllUsers).Methods("GET")
 }

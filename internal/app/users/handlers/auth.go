@@ -347,12 +347,12 @@ func (u UserHandlers) GetAllUsers(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// dto := make([]models.UserDTO, len(users))
-	// for i, user := range users {
-	// 	dto[i] = utils.ToUserDTO(user)
-	// }
+	// Wrap the users in a data object
+	response := map[string]interface{}{
+		"data": users,
+	}
 
-	utils.ReturnJSON(rw, users, http.StatusOK)
+	utils.ReturnJSON(rw, response, http.StatusOK)
 }
 
 func (u UserHandlers) Logout(rw http.ResponseWriter, r *http.Request) {

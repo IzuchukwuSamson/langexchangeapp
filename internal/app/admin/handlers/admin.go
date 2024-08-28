@@ -147,6 +147,18 @@ func (ah *AdminHandlers) UpdateAdmin(rw http.ResponseWriter, r *http.Request) {
 	)
 }
 
-func (a *AdminHandlers) GetAllUsers(rw http.ResponseWriter, r *http.Request) {
-	a.log.Println("GET ALL USERS")
+func (u *AdminHandlers) GetAllUsers(rw http.ResponseWriter, r *http.Request) {
+	users, err := u.services.FetchAllUsers()
+	if err != nil {
+		u.log.Printf("error decoding json request: %v\n", err)
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "error getting users"}, http.StatusInternalServerError)
+		return
+	}
+
+	// dto := make([]models.UserDTO, len(users))
+	// for i, user := range users {
+	// 	dto[i] = utils.ToUserDTO(user)
+	// }
+
+	utils.ReturnJSON(rw, users, http.StatusOK)
 }

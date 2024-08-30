@@ -43,32 +43,45 @@ func (u UserHandlers) Signup(rw http.ResponseWriter, r *http.Request) {
 	user.LastName = utils.SanitizeInput(user.LastName)
 	user.Email = strings.ToLower(utils.SanitizeInput(user.Email))
 
-	if user.FirstName == "" || user.LastName == "" || user.Email == "" || user.Password == "" || user.PhoneNumber == "" {
+	// Check if all required fields are filled
+	if user.FirstName == "" || user.LastName == "" || user.Email == "" || user.Password == "" || user.PasswordConfirm == "" {
 		utils.ReturnJSON(rw, utils.ErrMessage{Error: "complete all fields"}, http.StatusBadRequest)
 		return
 	}
 
+	// Validate email format
 	if !utils.IsValidEmail(user.Email) {
 		utils.ReturnJSON(rw, utils.ErrMessage{Error: "invalid email format"}, http.StatusBadRequest)
 		return
 	}
 
+	// Validate password strength
 	if !utils.IsValidPassword(user.Password) {
 		utils.ReturnJSON(rw, utils.ErrMessage{Error: "password must contain uppercase, lowercase, and numbers"}, http.StatusBadRequest)
 		return
 	}
 
+	// Confirm password
+	if user.Password != user.PasswordConfirm {
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "passwords do not match"}, http.StatusBadRequest)
+		return
+	}
+
+	// Check if the user already exists
 	existingUser, err := u.services.GetUserByEmail(user.Email)
 	if err == nil && existingUser.Email != "" {
 		utils.ReturnJSON(rw, utils.ErrMessage{Error: "user exists"}, http.StatusBadRequest)
 		return
 	}
 
+	// Hash the password
 	user.Password, err = utils.HashPassword(user.Password)
 	if err != nil {
 		utils.ReturnJSON(rw, utils.ErrMessage{Error: "error hashing password"}, http.StatusBadRequest)
 		return
 	}
+
+	// Set user role and timestamps
 	user.Role = utils.UserRole
 	user.LastActive = time.Now()
 	user.CreatedAt = time.Now()
@@ -82,6 +95,7 @@ func (u UserHandlers) Signup(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Prepare email information
 	utilsUser := utils.EmailInfo{
 		FirstName: createdUser.FirstName,
 		Email:     createdUser.Email,
@@ -95,11 +109,13 @@ func (u UserHandlers) Signup(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Return success response
 	utils.ReturnJSON(rw,
 		utils.ResponseMsg{
-			Message: "Account created successfully. Please check your email for the verification PIN.",
+			// Message: "Account created successfully. Please check your email for the verification PIN.",
 			Data: map[string]string{
-				"id": createdUser.ID,
+				"id":      createdUser.ID,
+				"message": "Account created successfully. Please check your email for the verification PIN.",
 			},
 		},
 		http.StatusOK,
@@ -279,7 +295,7 @@ func (u UserHandlers) ResetPassword(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if request.Email == "" || request.ResetCode == "" || request.NewPassword == "" || request.ConfirmPassword == "" {
+	if request.ResetCode == "" || request.NewPassword == "" || request.ConfirmPassword == "" {
 		utils.ReturnJSON(rw, utils.ErrMessage{Error: "complete all fields"}, http.StatusBadRequest)
 		return
 	}

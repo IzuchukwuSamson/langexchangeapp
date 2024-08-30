@@ -12,6 +12,7 @@ type User struct {
 	Email                   string                 `json:"email"`
 	EmailVerified           int                    `json:"email_verified"`
 	Password                string                 `json:"password"`
+	PasswordConfirm         string                 `json:"password_confirm"`
 	PhoneNumber             string                 `json:"phonenumber"`
 	Role                    string                 `json:"role"`
 	LastActive              time.Time              `json:"last_active"`

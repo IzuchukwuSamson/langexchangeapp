@@ -21,4 +21,5 @@ func RegisterUserRoutes(base *mux.Router, userHandlers *initializer.Handler) {
 	userAuthRoutes := userRoutes.NewRoute().Subrouter()
 	userAuthRoutes.Use(mux.MiddlewareFunc(userHandlers.Middleware.AuthCheck))
 	// userAuthRoutes.HandleFunc("/getallusers", userHandlers.User.GetAllUsers).Methods("GET")
+	userAuthRoutes.HandleFunc("/dashboard", userHandlers.User.Dashboard).Methods("GET")
 }

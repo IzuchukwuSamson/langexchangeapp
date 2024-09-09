@@ -203,6 +203,7 @@ func (u UserHandlers) PasswordLogin(rw http.ResponseWriter, r *http.Request) {
 	utils.ReturnJSON(rw, utils.ResponseMsg{
 		Message: "Logged in successfully",
 		Data: map[string]string{
+			"message":       "Logged in successfully.",
 			"access_token":  accessToken,
 			"refresh_token": refreshToken,
 		}},

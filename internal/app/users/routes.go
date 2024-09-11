@@ -16,6 +16,7 @@ func RegisterUserRoutes(base *mux.Router, userHandlers *initializer.Handler) {
 	userRoutes.HandleFunc("/forgot-password", userHandlers.User.ForgotPassword).Methods("POST")
 	userRoutes.HandleFunc("/reset-password", userHandlers.User.ResetPassword).Methods("POST")
 	userRoutes.HandleFunc("/getallusers", userHandlers.User.GetAllUsers).Methods("GET")
+	userRoutes.HandleFunc("/getuserbyid", userHandlers.User.GetUserById).Methods("GET")
 
 	// auth protected routes
 	userAuthRoutes := userRoutes.NewRoute().Subrouter()

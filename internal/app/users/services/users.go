@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
@@ -39,23 +40,37 @@ func (u *UserService) FetchUserById(id string) (*models.User, error) {
 // GetAllUsers implements UserInterface.
 func (u *UserService) FetchAllUsers() ([]models.User, error) {
 	query := `
-        SELECT id, firstname, lastname, username, email, email_verified, password, phonenumber, role, last_active, created_at, updated_at 
+        SELECT 
+            id, 
+            firstname, 
+            lastname, 
+            username, 
+            email, 
+            email_verified, 
+            password, 
+            phonenumber, 
+            role, 
+            languages_spoken, 
+            languages_learning, 
+            last_active, 
+            created_at, 
+            updated_at 
         FROM users
     `
-	// Execute the query
+
 	rows, err := u.DB.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch users: %v", err)
 	}
 	defer rows.Close()
 
-	// Prepare to store the results
 	var users []models.User
 
-	// Iterate over the result set
 	for rows.Next() {
 		var user models.User
-		// Scan the result into the user struct
+		var languagesSpoken []byte
+		var languagesLearning []byte
+
 		err := rows.Scan(
 			&user.ID,
 			&user.FirstName,
@@ -66,22 +81,101 @@ func (u *UserService) FetchAllUsers() ([]models.User, error) {
 			&user.Password,
 			&user.PhoneNumber,
 			&user.Role,
+			&languagesSpoken,
+			&languagesLearning,
 			&user.LastActive,
 			&user.CreatedAt,
 			&user.UpdatedAt,
 		)
+
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan user: %v", err)
 		}
+
+		// Check if languagesSpoken is empty or NULL
+		if len(languagesSpoken) == 0 {
+			user.LanguagesSpoken = []string{} // Initialize to empty slice if empty or NULL
+		} else {
+			err = json.Unmarshal(languagesSpoken, &user.LanguagesSpoken)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal languages spoken: %v", err)
+			}
+		}
+
+		// Check if languagesLearning is empty or NULL
+		if len(languagesLearning) == 0 {
+			user.LanguagesLearning = []string{} // Initialize to empty slice if empty or NULL
+		} else {
+			err = json.Unmarshal(languagesLearning, &user.LanguagesLearning)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal languages learning: %v", err)
+			}
+		}
+
 		users = append(users, user)
 	}
 
-	// Check for errors after iterating over the result set
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating over results: %v", err)
 	}
 
 	return users, nil
+}
+
+func (u *UserService) FetchUserByID(userId string) (*models.User, error) {
+	query := `
+        SELECT id, firstname, lastname, username, email, email_verified, password, phonenumber, role, languages_spoken, languages_learning, last_active, created_at, updated_at
+        FROM users
+        WHERE id = ?
+    `
+	row := u.DB.QueryRow(query, userId)
+
+	var user models.User
+	var languagesSpoken []byte
+	var languagesLearning []byte
+
+	// Scan all fields, including languages
+	err := row.Scan(
+		&user.ID,
+		&user.FirstName,
+		&user.LastName,
+		&user.Username,
+		&user.Email,
+		&user.EmailVerified,
+		&user.Password,
+		&user.PhoneNumber,
+		&user.Role,
+		&languagesSpoken,   // Fetch the JSON data for spoken languages
+		&languagesLearning, // Fetch the JSON data for learning languages
+		&user.LastActive,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		return &user, fmt.Errorf("failed to fetch user by ID: %v", err)
+	}
+
+	// Check if languagesSpoken is empty or NULL
+	if len(languagesSpoken) == 0 {
+		user.LanguagesSpoken = []string{} // Initialize to empty slice if empty or NULL
+	} else {
+		err = json.Unmarshal(languagesSpoken, &user.LanguagesSpoken)
+		if err != nil {
+			return &user, fmt.Errorf("failed to unmarshal languages spoken: %v", err)
+		}
+	}
+
+	// Check if languagesLearning is empty or NULL
+	if len(languagesLearning) == 0 {
+		user.LanguagesLearning = []string{} // Initialize to empty slice if empty or NULL
+	} else {
+		err = json.Unmarshal(languagesLearning, &user.LanguagesLearning)
+		if err != nil {
+			return &user, fmt.Errorf("failed to unmarshal languages learning: %v", err)
+		}
+	}
+
+	return &user, nil
 }
 
 func (u *UserService) CreateUser(user models.User) (*models.User, string, error) {
@@ -111,7 +205,8 @@ func (u *UserService) CreateUser(user models.User) (*models.User, string, error)
 		return nil, "", fmt.Errorf("failed to retrieve inserted user ID: %v", err)
 	}
 
-	user.ID = strconv.FormatInt(userID, 10)
+	// user.ID = strconv.FormatInt(userID, 10)
+	user.ID = userID
 
 	// Generate a verification code
 	verificationCode := utils.GeneratePIN()
@@ -227,8 +322,8 @@ func (u *UserService) FindOrCreateUser(userInfo map[string]interface{}) (*models
 		return nil, fmt.Errorf("failed to retrieve inserted user ID: %v", err)
 	}
 
-	user.ID = strconv.FormatInt(userID, 10)
-	// user.ID = userID
+	// user.ID = strconv.FormatInt(userID, 10)
+	user.ID = userID
 	user.FirstName = userInfo["firstname"].(string)
 	user.LastName = userInfo["lastname"].(string)
 	user.Username = userInfo["username"].(string)

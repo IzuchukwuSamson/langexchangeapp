@@ -114,7 +114,7 @@ func (u UserHandlers) Signup(rw http.ResponseWriter, r *http.Request) {
 		utils.ResponseMsg{
 			// Message: "Account created successfully. Please check your email for the verification PIN.",
 			Data: map[string]string{
-				"id":      createdUser.ID,
+				"id":      strconv.FormatInt(createdUser.ID, 10),
 				"message": "Account created successfully. Please check your email for the verification PIN.",
 			},
 		},
@@ -175,7 +175,7 @@ func (u UserHandlers) PasswordLogin(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if userDb.ID == "" {
+	if userDb.ID == 0 {
 		utils.ReturnJSON(rw, utils.ErrMessage{Error: "details not found"}, http.StatusUnauthorized)
 		return
 	}
@@ -313,12 +313,14 @@ func (u UserHandlers) ResetPassword(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userIDInt, err := strconv.ParseInt(user.ID, 10, 64)
-	if err != nil {
-		u.log.Printf("error parsing user ID: %v\n", err)
-		utils.ReturnJSON(rw, utils.ErrMessage{Error: "invalid user ID"}, http.StatusInternalServerError)
-		return
-	}
+	// userIDInt, err := strconv.ParseInt(user.ID, 10, 64)
+	userIDInt := user.ID
+
+	// if err != nil {
+	// 	u.log.Printf("error parsing user ID: %v\n", err)
+	// 	utils.ReturnJSON(rw, utils.ErrMessage{Error: "invalid user ID"}, http.StatusInternalServerError)
+	// 	return
+	// }
 
 	passwordReset, err := u.services.GetPasswordResetByCode(request.ResetCode)
 	if err != nil || passwordReset == nil || passwordReset.ExpiresAt.Before(time.Now()) || passwordReset.UserID != userIDInt {
@@ -354,22 +356,6 @@ func (u UserHandlers) ResetPassword(rw http.ResponseWriter, r *http.Request) {
 		},
 		http.StatusOK,
 	)
-}
-
-func (u UserHandlers) GetAllUsers(rw http.ResponseWriter, r *http.Request) {
-	users, err := u.services.FetchAllUsers()
-	if err != nil {
-		u.log.Printf("error decoding json request: %v\n", err)
-		utils.ReturnJSON(rw, utils.ErrMessage{Error: "error getting users"}, http.StatusInternalServerError)
-		return
-	}
-
-	// Wrap the users in a data object
-	response := map[string]interface{}{
-		"data": users,
-	}
-
-	utils.ReturnJSON(rw, response, http.StatusOK)
 }
 
 func (u UserHandlers) Logout(rw http.ResponseWriter, r *http.Request) {

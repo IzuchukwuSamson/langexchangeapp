@@ -44,9 +44,10 @@ func main() {
 
 	// CORS middleware
 	corsHandler := gHandlers.CORS(
-		gHandlers.AllowedOrigins([]string{"*"}),                             // Allow all origins
+		gHandlers.AllowedOrigins([]string{"http://localhost:3000"}),         // Allow all origins
 		gHandlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE"}),  // Allow specific methods
 		gHandlers.AllowedHeaders([]string{"Content-Type", "Authorization"}), // Allow specific headers
+		gHandlers.AllowCredentials(),                                        // Allow credentials (cookies, headers, etc.)
 	)(apiRoutes)
 
 	logHandler := gHandlers.CombinedLoggingHandler(os.Stdout, corsHandler)

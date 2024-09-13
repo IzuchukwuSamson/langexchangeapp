@@ -53,6 +53,43 @@ func (u UserHandlers) GetUserById(rw http.ResponseWriter, r *http.Request) {
 	utils.ReturnJSON(rw, response, http.StatusOK)
 }
 
+func (u UserHandlers) GetCurrentUser(rw http.ResponseWriter, r *http.Request) {
+	// Extract user ID from context
+	userID, ok := r.Context().Value(utils.CtxKey("user")).(string)
+	if !ok || userID == "" {
+		u.log.Printf("user ID not found in context or is empty\n")
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "user ID not found in context"}, http.StatusUnauthorized)
+		return
+	}
+
+	// Fetch the current user based on userID
+	user, err := u.services.FetchUserByID(userID)
+	if err != nil {
+		u.log.Printf("error fetching user: %v\n", err)
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "error getting user"}, http.StatusInternalServerError)
+		return
+	}
+
+	if user == nil {
+		u.log.Printf("user with ID %s not found\n", userID)
+		utils.ReturnJSON(rw, utils.ErrMessage{Error: "user not found"}, http.StatusNotFound)
+		return
+	}
+
+	// Prepare response data
+	response := map[string]interface{}{
+		"data": user,
+	}
+
+	// Return JSON response
+	utils.ReturnJSON(rw, response, http.StatusOK)
+}
+
+func (u UserHandlers) UserTestRoute(rw http.ResponseWriter, r *http.Request) {
+	// Your route logic here
+	rw.Write([]byte("This is a protected route"))
+}
+
 // GetAllUsersById handles the HTTP request to fetch a user by ID
 // func (u UserHandlers) GetAllUsersById(rw http.ResponseWriter, r *http.Request) {
 // 	// Parse the ID from the URL parameters

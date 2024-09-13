@@ -18,9 +18,14 @@ func RegisterUserRoutes(base *mux.Router, userHandlers *initializer.Handler) {
 	userRoutes.HandleFunc("/getallusers", userHandlers.User.GetAllUsers).Methods("GET")
 	userRoutes.HandleFunc("/getuserbyid", userHandlers.User.GetUserById).Methods("GET")
 
-	// auth protected routes
+	// Auth protected routes
 	userAuthRoutes := userRoutes.NewRoute().Subrouter()
 	userAuthRoutes.Use(mux.MiddlewareFunc(userHandlers.Middleware.AuthCheck))
-	// userAuthRoutes.HandleFunc("/getallusers", userHandlers.User.GetAllUsers).Methods("GET")
+
+	// Add the GetCurrentUser route
+	userAuthRoutes.HandleFunc("/current", userHandlers.User.GetCurrentUser).Methods("GET")
+
+	// Other auth protected routes
 	userAuthRoutes.HandleFunc("/dashboard", userHandlers.User.Dashboard).Methods("GET")
+	userAuthRoutes.HandleFunc("/user-test", userHandlers.User.UserTestRoute).Methods("GET")
 }

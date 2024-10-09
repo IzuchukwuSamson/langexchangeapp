@@ -54,7 +54,6 @@ import (
 func (m *Middleware) AuthCheck(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
-		// m.logger.Println("Authorization header: ", authHeader)
 		if !strings.HasPrefix(authHeader, "Bearer ") {
 			utils.ReturnJSON(rw, utils.ErrMessage{Error: "auth header is needed"}, http.StatusUnauthorized)
 			return
@@ -71,12 +70,15 @@ func (m *Middleware) AuthCheck(next http.Handler) http.Handler {
 			utils.ReturnJSON(rw, utils.ErrMessage{Error: msg}, http.StatusUnauthorized)
 			return
 		}
+
 		id, err := claims.GetSubject()
 		if err != nil {
 			m.logger.Println("error getting claims: ", err)
 			utils.ReturnJSON(rw, utils.ErrMessage{Error: utils.GenericError}, http.StatusInternalServerError)
 			return
 		}
+
+		// Inject the user ID into the context
 		ctx := context.WithValue(r.Context(), utils.CtxKey("user"), id)
 		next.ServeHTTP(rw, r.WithContext(ctx))
 	})

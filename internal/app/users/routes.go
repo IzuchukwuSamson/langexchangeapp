@@ -24,6 +24,7 @@ func RegisterUserRoutes(base *mux.Router, userHandlers *initializer.Handler) {
 
 	// Add the GetCurrentUser route
 	userAuthRoutes.HandleFunc("/current", userHandlers.User.GetCurrentUser).Methods("GET")
+	userAuthRoutes.HandleFunc("/me", userHandlers.User.ProfileHandler).Methods("GET")
 
 	// Other auth protected routes
 	userAuthRoutes.HandleFunc("/dashboard", userHandlers.User.Dashboard).Methods("GET")

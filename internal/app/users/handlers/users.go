@@ -1,11 +1,40 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/IzuchukwuSamson/lexi/utils"
 )
+
+type CtxKey string
+
+func (u UserHandlers) ProfileHandler(w http.ResponseWriter, r *http.Request) {
+	// Get the authenticated user's ID from the context
+	userID, ok := r.Context().Value(utils.CtxKey("user")).(string)
+	if !ok {
+		utils.ReturnJSON(w, utils.ErrMessage{Error: "Unauthorized"}, http.StatusUnauthorized)
+		return
+	}
+
+	// Fetch the user from the database using the userID
+	user, err := u.services.FetchUserByID(userID)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// Create the response payload
+	response := map[string]interface{}{
+		"status": true,
+		"data":   user,
+	}
+
+	// Set the content type to JSON and respond
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
 
 func (u UserHandlers) Dashboard(rw http.ResponseWriter, r *http.Request) {
 	fmt.Println("Dashboard route")

@@ -17,8 +17,8 @@ type Handler struct {
 func Handlers(services *Store, log *log.Logger) *Handler {
 	return &Handler{
 		// User:         *handlers.NewUser(log, services.User, services.Redis),
-		// Middleware:   *middleware.NewMiddleware(log),
-		User:  *userHandlers.NewUserHandlers(log, services.User),
-		Admin: *adminHandlers.NewAdminHandlers(log, services.Admin),
+		Middleware: *middleware.NewMiddleware(log),
+		User:       *userHandlers.NewUserHandlers(log, services.User),
+		Admin:      *adminHandlers.NewAdminHandlers(log, services.Admin),
 	}
 }

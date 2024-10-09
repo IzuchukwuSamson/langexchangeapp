@@ -19,10 +19,14 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		panic(err)
+	// Load the .env file only if not in production
+	if os.Getenv("ENVIRONMENT") != "production" {
+		err := godotenv.Load()
+		if err != nil {
+			log.Println("Error loading .env file:", err)
+		}
 	}
+
 	port, host := getHostAndPort()
 	logger := log.New(os.Stdout, fmt.Sprintf("%s:", os.Getenv("APP_NAME")), log.LstdFlags)
 
@@ -32,7 +36,6 @@ func main() {
 	}
 
 	dbConn := db.NewDB(nil, dbsql)
-	// redis := db.Redis()
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -72,7 +75,6 @@ func main() {
 	log.Printf("signal %v received\n", recv)
 
 	shutdownServer(&s)
-
 }
 
 func shutdownServer(s *http.Server) {
@@ -80,14 +82,19 @@ func shutdownServer(s *http.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := s.Shutdown(ctx); err != nil {
-		log.Fatalf("error shuting down server: %v", err)
+		log.Fatalf("error shutting down server: %v", err)
 	}
 	log.Print("server shut down gracefully")
 }
 
 func getHostAndPort() (string, string) {
 	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // default port if not set
+	}
 	host := os.Getenv("HOST")
-
+	if host == "" {
+		host = "0.0.0.0" // default host if not set
+	}
 	return port, host
 }
